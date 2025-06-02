@@ -1,11 +1,14 @@
-
-import React, { useState } from 'react';
-import { Plus, Clock, Users, ChefHat } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Clock, Users, ChefHat, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import RecipeModal from '@/components/RecipeModal';
 import RecipeView from '@/components/RecipeView';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface Recipe {
   id: string;
@@ -28,6 +31,10 @@ interface Recipe {
 }
 
 const Index = () => {
+  const { user, signOut, loading } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
   const [recipes, setRecipes] = useState<Recipe[]>([
     {
       id: '1',
@@ -74,6 +81,47 @@ const Index = () => {
     setIsModalOpen(false);
   };
 
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Signed out",
+        description: "You've been signed out successfully."
+      });
+      navigate('/auth');
+    }
+  };
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+        <div className="text-center">
+          <ChefHat className="h-12 w-12 text-orange-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
+
   if (viewingRecipe) {
     return (
       <RecipeView 
@@ -91,11 +139,35 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+        {/* Header with User Info */}
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <ChefHat className="h-12 w-12 text-orange-600" />
-            <h1 className="text-4xl font-bold text-gray-900">RecipeCollab</h1>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <ChefHat className="h-12 w-12 text-orange-600" />
+              <h1 className="text-4xl font-bold text-gray-900">RecipeCollab</h1>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Avatar>
+                  <AvatarFallback>
+                    <User className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm text-gray-600">
+                  {user.email}
+                </span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSignOut}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </Button>
+            </div>
           </div>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Create, collaborate, and cook together. Scale recipes instantly and time your cooking perfectly.
