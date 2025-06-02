@@ -56,7 +56,10 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ isOpen, onClose, onSave, reci
         servings: recipe.servings,
         tags: recipe.tags,
         ingredients: recipe.ingredients,
-        steps: recipe.steps,
+        steps: recipe.steps.map(step => ({
+          instruction: step.instruction,
+          timerMinutes: step.timerMinutes
+        })),
         isPublic: recipe.isPublic
       });
     } else {
